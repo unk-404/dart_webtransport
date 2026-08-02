@@ -1,0 +1,3 @@
+[workspace]
+members = ["example/server","rust"]
+resolver = "3"
