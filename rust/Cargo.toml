@@ -1,10 +1,10 @@
 [package]
 name = "webtransport"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2021"
 rust-version = "1.88"
-description = "C ABI for wtransport (WebTransport over HTTP/3), consumed by package:flutter_webtransport"
-license = "MIT OR Apache-2.0"
+description = "C ABI for wtransport (WebTransport over HTTP/3), consumed by package:webtransport"
+license = "MIT"
 publish = false
 
 [lib]

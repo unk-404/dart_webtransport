@@ -1,6 +1,18 @@
-name: flutter_webtransport
-description: "A new Dart FFI package project."
-version: 0.0.1
+name: webtransport
+description: >-
+  WebTransport (HTTP/3 over QUIC) for Dart and Flutter: one browser-shaped client
+  API, backed by the browser on the web and by a bundled Rust implementation
+  elsewhere.
+version: 0.1.0
+
+repository: https://github.com/unk-404/dart_webtransport
+issue_tracker: https://github.com/unk-404/dart_webtransport/issues
+topics:
+  - webtransport
+  - quic
+  - http3
+  - ffi
+  - networking
 
 environment:
   sdk: ^3.13.5
@@ -16,4 +28,11 @@ dependencies:
 dev_dependencies:
   ffigen: ^23.0.0
   flutter_lints: ^6.0.0
+  # Floor, not a real dependency: pub.dev's downgrade analysis compiles every
+  # build hook in the resolution, including `ffigen`'s. At platform 3.0.0 that
+  # hook fails with `Member not found: 'packageRoot'` (removed from the current
+  # SDK) and the score reports [pub-downgrade-failed] with the reason hidden.
+  # 3.2.0 is the first release without that call. Verified with
+  # `python3 tool/check_hooks_compile.py` after `dart pub downgrade`.
+  platform: ^3.2.0
   test: ^1.28.0

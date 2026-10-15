@@ -3,7 +3,7 @@
 /// This is deliberately *not* part of the portable client API: browsers cannot
 /// listen for WebTransport sessions, so a server only exists on the native
 /// backend. It is exported from
-/// `package:flutter_webtransport/flutter_webtransport_ffi.dart`.
+/// `package:webtransport/webtransport_ffi.dart`.
 library;
 
 import 'dart:async';
@@ -12,7 +12,7 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 
-import '../../flutter_webtransport_bindings_generated.dart' as b;
+import '../../webtransport_bindings_generated.dart' as b;
 import '../api.dart';
 import 'memory.dart';
 import 'runtime.dart';
@@ -179,7 +179,9 @@ final class WebTransportServerConfig {
       case WebTransportSelfSignedIdentity():
         final names = identity.subjectAltNames;
         if (names.isEmpty) {
-          throw ArgumentError('at least one subject alternative name is needed');
+          throw ArgumentError(
+            'at least one subject alternative name is needed',
+          );
         }
         final array = calloc<Pointer<Char>>(names.length);
         final allocated = <Pointer<Char>>[];
@@ -300,8 +302,9 @@ final class WebTransportSessionRequest {
             b.wt_status_t.WT_OK) {
           continue;
         }
-        out[name.value.cast<Utf8>().toDartString()] =
-            value.value.cast<Utf8>().toDartString();
+        out[name.value.cast<Utf8>().toDartString()] = value.value
+            .cast<Utf8>()
+            .toDartString();
       }
     } finally {
       calloc.free(name);
@@ -331,7 +334,9 @@ final class WebTransportSessionRequest {
 
   /// Accepts the request, returning the server side of the session.
   Future<NativeSession> accept({Map<String, String>? headers}) async {
-    if (_answered) throw StateError('this session request was already answered');
+    if (_answered) {
+      throw StateError('this session request was already answered');
+    }
     _answered = true;
     final nativeHeaders = allocHeaders(headers);
     final Future<NativeEvent> event;
@@ -359,7 +364,9 @@ final class WebTransportSessionRequest {
   ///
   /// [statusCode] selects `403` (default), `404` or `429`.
   Future<void> reject({int statusCode = 403}) async {
-    if (_answered) throw StateError('this session request was already answered');
+    if (_answered) {
+      throw StateError('this session request was already answered');
+    }
     _answered = true;
     final event = await nativeRuntime.oneShot('wt_session_request_reject', (
       opId,
@@ -396,7 +403,9 @@ final class WebTransportServer {
   ///
   /// The configuration can be released afterwards; the returned server and its
   /// sessions keep working.
-  static Future<WebTransportServer> bind(WebTransportServerConfig config) async {
+  static Future<WebTransportServer> bind(
+    WebTransportServerConfig config,
+  ) async {
     nativeRuntime.start();
     // Applies the identity and the socket settings to the native handle; the
     // certificate digest can only be read afterwards.

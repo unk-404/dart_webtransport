@@ -14,7 +14,7 @@ pub(crate) fn guard<T>(fallback: T, f: impl FnOnce() -> T) -> T {
         Ok(value) => value,
         Err(_) => {
             crate::runtime::emit_log(
-                "flutter_webtransport: panic caught at the FFI boundary".to_owned(),
+                "webtransport: panic caught at the FFI boundary".to_owned(),
             );
             fallback
         }

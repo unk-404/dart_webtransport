@@ -1,6 +1,6 @@
 /// Native only entry points.
 ///
-/// Import this instead of `package:flutter_webtransport/flutter_webtransport.dart`
+/// Import this instead of `package:webtransport/webtransport.dart`
 /// when you need functionality that a browser cannot provide:
 ///
 ///  * [WebTransportServer] — listening for WebTransport sessions (the
@@ -19,7 +19,7 @@
 /// This library is not available on the web: it reaches into `dart:ffi`.
 library;
 
-export 'flutter_webtransport_bindings_generated.dart';
+export 'webtransport_bindings_generated.dart';
 export 'src/api.dart';
 export 'src/native/isolate_backend.dart' show WebTransportWorker;
 export 'src/native/memory.dart'
@@ -41,7 +41,7 @@ export 'src/native/transport.dart' show NativeWebTransport;
 
 import 'package:ffi/ffi.dart';
 
-import 'flutter_webtransport_bindings_generated.dart';
+import 'webtransport_bindings_generated.dart';
 
 /// Version string reported by the library that was actually loaded.
 String get nativeVersion => wt_version_string().cast<Utf8>().toDartString();

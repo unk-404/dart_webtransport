@@ -1,7 +1,7 @@
 /// Worker isolate backend.
 ///
 /// The portable `createWebTransport` in
-/// `package:flutter_webtransport/flutter_webtransport.dart` runs the native
+/// `package:webtransport/webtransport.dart` runs the native
 /// implementation inside a dedicated worker isolate and hands the application a
 /// proxy that speaks the same [WebTransport] interface. That gives:
 ///
@@ -24,7 +24,7 @@ import 'dart:ffi';
 import 'dart:isolate';
 import 'dart:typed_data';
 
-import '../../flutter_webtransport_bindings_generated.dart' as b;
+import '../../webtransport_bindings_generated.dart' as b;
 import '../api.dart';
 import 'memory.dart';
 import 'runtime.dart';
@@ -57,7 +57,7 @@ final class WebTransportWorker {
         dispatchBatchMax: dispatchBatchMax,
         chunkSize: chunkSize,
       ),
-      debugName: 'flutter_webtransport',
+      debugName: 'webtransport',
       errorsAreFatal: false,
     );
     final first = await ready.first;
@@ -82,7 +82,10 @@ final class WebTransportWorker {
   bool _disposed = false;
 
   /// Opens a session in the worker isolate.
-  Future<WebTransport> connect(String url, [WebTransportOptions? options]) async {
+  Future<WebTransport> connect(
+    String url, [
+    WebTransportOptions? options,
+  ]) async {
     final op = options ?? const WebTransportOptions();
     final response = await _command(<String, Object?>{
       'cmd': 'connect',
@@ -340,7 +343,8 @@ final class _ProxySession implements WebTransport {
   }
 }
 
-final class _ProxyBidirectionalStream implements WebTransportBidirectionalStream {
+final class _ProxyBidirectionalStream
+    implements WebTransportBidirectionalStream {
   _ProxyBidirectionalStream(this.readable, this.writable);
 
   @override
@@ -669,7 +673,9 @@ Future<void> _handleCommand(
 ) async {
   final id = message['id'];
   void respond([Map<String, Object?> extra = const <String, Object?>{}]) {
-    if (id is int) state.send(<String, Object?>{'ev': 'response', 'id': id, ...extra});
+    if (id is int) {
+      state.send(<String, Object?>{'ev': 'response', 'id': id, ...extra});
+    }
   }
 
   void fail(Object error, [int status = 0]) {
@@ -688,7 +694,8 @@ Future<void> _handleCommand(
       try {
         final options = WebTransportOptions(
           serverCertificateHashes: <WebTransportHash>[
-            for (final entry in (message['hashes'] as List<Object?>? ?? const []))
+            for (final entry
+                in (message['hashes'] as List<Object?>? ?? const []))
               WebTransportHash(
                 algorithm: (entry! as List<Object?>)[0]! as String,
                 value: (entry[1]! as Uint8List),
@@ -756,7 +763,8 @@ Future<void> _handleCommand(
     case 'write':
       try {
         final send = state.senders[message['stream']]!;
-        final payload = (message['data']! as TransferableTypedData).materialize();
+        final payload = (message['data']! as TransferableTypedData)
+            .materialize();
         await send.write(payload.asUint8List());
         respond();
       } on Object catch (error) {
@@ -859,7 +867,8 @@ Future<void> _handleCommand(
     case 'datagramWrite':
       try {
         final session = state.sessions[message['session']]!;
-        final payload = (message['data']! as TransferableTypedData).materialize();
+        final payload = (message['data']! as TransferableTypedData)
+            .materialize();
         await session.datagrams.write(payload.asUint8List());
         respond();
       } on Object catch (error) {

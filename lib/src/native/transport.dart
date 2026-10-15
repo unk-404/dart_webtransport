@@ -6,7 +6,7 @@
 /// through [WebTransportRuntime].
 ///
 /// Most applications should call `createWebTransport` from
-/// `package:flutter_webtransport/flutter_webtransport.dart` instead, which runs
+/// `package:webtransport/webtransport.dart` instead, which runs
 /// this implementation inside a worker isolate.
 library;
 
@@ -16,7 +16,7 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 
-import '../../flutter_webtransport_bindings_generated.dart' as b;
+import '../../webtransport_bindings_generated.dart' as b;
 import '../api.dart';
 import 'memory.dart';
 import 'runtime.dart';
@@ -82,8 +82,7 @@ final class NativeWebTransport implements WebTransport {
       _session?.reliability ?? WebTransportReliabilityMode.pending;
 
   @override
-  WebTransportDatagramDuplexStream get datagrams =>
-      _DeferredDatagrams(this);
+  WebTransportDatagramDuplexStream get datagrams => _DeferredDatagrams(this);
 
   @override
   Stream<WebTransportBidirectionalStream> get incomingBidirectionalStreams =>
@@ -286,7 +285,8 @@ final class _DeferredDatagrams implements WebTransportDatagramDuplexStream {
   }
 
   @override
-  int get maxDatagramSize => _transport.session?.datagrams.maxDatagramSize ?? -1;
+  int get maxDatagramSize =>
+      _transport.session?.datagrams.maxDatagramSize ?? -1;
 
   @override
   Future<void> write(List<int> data) async {

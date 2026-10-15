@@ -1,8 +1,8 @@
 // Regenerates the two generated artifacts of this package:
 //
-//   1. `src/flutter_webtransport.h` - the C header, emitted by cbindgen from
+//   1. `src/webtransport.h` - the C header, emitted by cbindgen from
 //      the Rust sources in `rust/src/` (the Rust crate is the source of truth).
-//   2. `lib/flutter_webtransport_bindings_generated.dart` - the Dart FFI
+//   2. `lib/webtransport_bindings_generated.dart` - the Dart FFI
 //      bindings, emitted by `package:ffigen` from that header.
 //
 // Usage:
@@ -17,7 +17,7 @@
 
 import 'dart:io';
 
-const String _headerPath = 'src/flutter_webtransport.h';
+const String _headerPath = 'src/webtransport.h';
 const String _ffigenConfig = 'ffigen.yaml';
 const String _localFfigenConfig = '.dart_tool/ffigen.local.yaml';
 
@@ -26,18 +26,14 @@ Future<int> main(List<String> args) async {
   final explicitLibclang = _parseOption(args, '--libclang');
 
   stdout.writeln('==> cbindgen: generating $_headerPath');
-  final cbindgenExit = await _run(
-    _which('cbindgen') ?? 'cbindgen',
-    <String>[
-      '--config',
-      'cbindgen.toml',
-      '--crate',
-      'webtransport',
-      '--output',
-      '../$_headerPath',
-    ],
-    workingDirectory: '$root/rust',
-  );
+  final cbindgenExit = await _run(_which('cbindgen') ?? 'cbindgen', <String>[
+    '--config',
+    'cbindgen.toml',
+    '--crate',
+    'webtransport',
+    '--output',
+    '../$_headerPath',
+  ], workingDirectory: '$root/rust');
   if (cbindgenExit != 0) {
     stderr.writeln('cbindgen failed with exit code $cbindgenExit');
     return cbindgenExit;
@@ -68,11 +64,12 @@ Future<int> main(List<String> args) async {
   await localFile.writeAsString(patched);
 
   stdout.writeln('==> ffigen: generating the Dart bindings');
-  final ffigenExit = await _run(
-    Platform.resolvedExecutable,
-    <String>['run', 'ffigen', '--config', _localFfigenConfig],
-    workingDirectory: root,
-  );
+  final ffigenExit = await _run(Platform.resolvedExecutable, <String>[
+    'run',
+    'ffigen',
+    '--config',
+    _localFfigenConfig,
+  ], workingDirectory: root);
   if (ffigenExit != 0) {
     stderr.writeln('ffigen failed with exit code $ffigenExit');
     return ffigenExit;

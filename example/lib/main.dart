@@ -2,10 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_webtransport/flutter_webtransport.dart';
+import 'package:webtransport/webtransport.dart';
 
-import 'echo_server_stub.dart'
-    if (dart.library.io) 'echo_server_native.dart';
+import 'echo_server_stub.dart' if (dart.library.io) 'echo_server_native.dart';
 import 'echo_server_types.dart';
 
 /// Demonstrates the portable client API.
@@ -57,8 +56,10 @@ class _MyAppState extends State<MyApp> {
     try {
       final server = await startLocalEchoServer();
       if (server == null) {
-        _note('no local echo server on this platform (the browser cannot '
-            'listen for WebTransport sessions)');
+        _note(
+          'no local echo server on this platform (the browser cannot '
+          'listen for WebTransport sessions)',
+        );
         if (mounted) setState(() => _status = 'idle');
         return;
       }
@@ -73,8 +74,10 @@ class _MyAppState extends State<MyApp> {
       );
       _client = client;
       await client.ready.timeout(const Duration(seconds: 20));
-      _note('connected — reliability: ${client.reliability.name}, '
-          'max datagram: ${client.datagrams.maxDatagramSize} B');
+      _note(
+        'connected — reliability: ${client.reliability.name}, '
+        'max datagram: ${client.datagrams.maxDatagramSize} B',
+      );
 
       // Unreliable, unordered datagrams.
       final datagram = client.datagrams.readable.first;
@@ -102,7 +105,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('flutter_webtransport')),
+        appBar: AppBar(title: const Text('webtransport')),
         body: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(

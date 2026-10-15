@@ -20,7 +20,7 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 
-import '../../flutter_webtransport_bindings_generated.dart' as b;
+import '../../webtransport_bindings_generated.dart' as b;
 import 'memory.dart';
 
 /// Owns the native runtime and routes completions to their Dart completers.
@@ -32,8 +32,9 @@ final class WebTransportRuntime {
 
   final Map<int, void Function(NativeEvent)> _pending =
       <int, void Function(NativeEvent)>{};
-  final StreamController<String> _logs =
-      StreamController<String>.broadcast(sync: true);
+  final StreamController<String> _logs = StreamController<String>.broadcast(
+    sync: true,
+  );
 
   NativeCallable<b.wt_events_cb_tFunction>? _callback;
   int _nextOpId = 1;
@@ -48,14 +49,20 @@ final class WebTransportRuntime {
   /// Starts the runtime. Calling it more than once is a no-op.
   void start({int workerThreads = 0, int dispatchBatchMax = 64}) {
     if (_started) return;
-    final callback = NativeCallable<b.wt_events_cb_tFunction>.listener(_onBatch);
+    final callback = NativeCallable<b.wt_events_cb_tFunction>.listener(
+      _onBatch,
+    );
     final config = calloc<b.wt_runtime_config_t>();
     try {
       config.ref
         ..struct_size = sizeOf<b.wt_runtime_config_t>()
         ..worker_threads = workerThreads
         ..dispatch_batch_max = dispatchBatchMax;
-      final status = b.wt_runtime_init(config, callback.nativeFunction, nullptr);
+      final status = b.wt_runtime_init(
+        config,
+        callback.nativeFunction,
+        nullptr,
+      );
       if (status != b.wt_status_t.WT_OK) {
         callback.close();
         throw WebTransportException(

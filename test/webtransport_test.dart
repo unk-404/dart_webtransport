@@ -1,5 +1,5 @@
-import 'package:flutter_webtransport/flutter_webtransport.dart';
-import 'package:flutter_webtransport/flutter_webtransport_ffi.dart';
+import 'package:webtransport/webtransport.dart';
+import 'package:webtransport/webtransport_ffi.dart';
 import 'package:test/test.dart';
 
 /// Starts a self-signed echo server on an ephemeral port.
@@ -32,7 +32,7 @@ Future<WebTransportServer> startEchoServer() async {
 void main() {
   group('code asset', () {
     test('the native webtransport library is loaded', () {
-      expect(nativeVersion, contains('flutter_webtransport'));
+      expect(nativeVersion, contains('webtransport'));
     });
 
     test('the loaded library matches the generated ABI version', () {
@@ -63,9 +63,9 @@ void main() {
       );
       addTearDown(client.dispose);
 
-      final session = await client.ready.then((_) => client.session!).timeout(
-        const Duration(seconds: 20),
-      );
+      final session = await client.ready
+          .then((_) => client.session!)
+          .timeout(const Duration(seconds: 20));
       expect(session.remotePort, greaterThan(0));
       // The client socket is dual stack, so the peer may be reported as an
       // IPv4 mapped IPv6 address.

@@ -46,14 +46,15 @@ Future<void> disposeWebTransportWorker() async {
 Future<WebTransportWorker> _ensureWorker() {
   final existing = _worker;
   if (existing != null) return Future<WebTransportWorker>.value(existing);
-  return _starting ??= WebTransportWorker.spawn(
-    workerThreads: _workerThreads,
-    dispatchBatchMax: _dispatchBatchMax,
-    chunkSize: _chunkSize,
-  ).then((worker) {
-    _worker = worker;
-    return worker;
-  });
+  return _starting ??=
+      WebTransportWorker.spawn(
+        workerThreads: _workerThreads,
+        dispatchBatchMax: _dispatchBatchMax,
+        chunkSize: _chunkSize,
+      ).then((worker) {
+        _worker = worker;
+        return worker;
+      });
 }
 
 /// Creates a client session.

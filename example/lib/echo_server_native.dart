@@ -1,6 +1,5 @@
-import 'package:flutter_webtransport/flutter_webtransport.dart'
-    show WebTransportReceiveStreamX;
-import 'package:flutter_webtransport/flutter_webtransport_ffi.dart'
+import 'package:webtransport/webtransport.dart' show WebTransportReceiveStreamX;
+import 'package:webtransport/webtransport_ffi.dart'
     show
         WebTransportSelfSignedIdentity,
         WebTransportServer,

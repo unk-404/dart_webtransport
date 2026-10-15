@@ -1,7 +1,7 @@
 /// WebTransport for Flutter — one portable client API for web and native.
 ///
 /// ```dart
-/// import 'package:flutter_webtransport/flutter_webtransport.dart';
+/// import 'package:webtransport/webtransport.dart';
 ///
 /// final transport = createWebTransport(
 ///   'https://example.com:4433/echo',
@@ -42,7 +42,7 @@
 ///
 /// Native only functionality — the server side, the raw `ffi` bindings, the
 /// in-process backend and the worker controls — lives in
-/// `package:flutter_webtransport/flutter_webtransport_ffi.dart`.
+/// `package:webtransport/webtransport_ffi.dart`.
 ///
 /// ## Differences from the browser
 ///

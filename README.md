@@ -1,11 +1,11 @@
-# flutter_webtransport
+# webtransport
 
 WebTransport (HTTP/3 over QUIC) for Flutter, with one portable client API that
 runs **either** on the browser's native `WebTransport` **or** on a Rust
 implementation of the protocol (`wtransport`) compiled into the app.
 
 ```dart
-import 'package:flutter_webtransport/flutter_webtransport.dart';
+import 'package:webtransport/webtransport.dart';
 
 final transport = createWebTransport(
   'https://example.com:4433/echo',
@@ -45,15 +45,15 @@ The binding is layered, and every layer has a single responsibility:
 
 | layer | file(s) | responsibility |
 | --- | --- | --- |
-| **L0** raw ABI | `src/flutter_webtransport.h` (generated), `lib/flutter_webtransport_bindings_generated.dart` (generated) | the `wt_*` C functions and `wt_*_t` opaque handles |
+| **L0** raw ABI | `src/webtransport.h` (generated), `lib/webtransport_bindings_generated.dart` (generated) | the `wt_*` C functions and `wt_*_t` opaque handles |
 | **L1** memory safety | `lib/src/native/memory.dart` | status → exception, string / header marshalling, `wt_buffer_t` ownership, copying an event out of its batch before it is freed. No other layer does pointer arithmetic or `malloc`. |
 | **L2** async plumbing | `lib/src/native/runtime.dart` | starts the tokio runtime, registers the single `NativeCallable.listener`, correlates completions with their callers, drains each event batch exactly once |
 | **L3** objects | `lib/src/native/{transport,session,server}.dart`, `lib/src/web/transport.dart`, `lib/src/native/isolate_backend.dart` | clients, sessions, streams, datagrams — one implementation per backend |
 | **L4** contract | `lib/src/api.dart` | the platform neutral WebTransport surface every backend implements |
-| **L5** facade | `lib/flutter_webtransport.dart` | the portable API, wired to a backend by a conditional export |
+| **L5** facade | `lib/webtransport.dart` | the portable API, wired to a backend by a conditional export |
 
 Native-only functionality lives in a **separate** library,
-`lib/flutter_webtransport_ffi.dart`: the server side, the in-process backend,
+`lib/webtransport_ffi.dart`: the server side, the in-process backend,
 the worker isolate, `NativeBuffer` and the raw `wt_*` bindings. It reaches into
 `dart:ffi`, so it is not part of the web build.
 
@@ -88,7 +88,7 @@ be shared with a worker isolate. The interface is identical either way.
 | `rust/` | the Rust crate implementing the C ABI (`staticlib` + `cdylib` + `rlib`) |
 | `rust/cbindgen.toml` | cbindgen configuration — the header is generated from Rust |
 | `rust/rust-toolchain.toml` | pinned toolchain and target list |
-| `src/flutter_webtransport.h` | **generated** C header — the ABI contract |
+| `src/webtransport.h` | **generated** C header — the ABI contract |
 | `hook/build.dart` | the Flutter build hook |
 | `lib/` | the Dart layers described above |
 | `tool/generate_bindings.dart` | regenerates the header *and* the Dart bindings |
@@ -114,7 +114,7 @@ On native the hook compiles `rust/` in release mode (fat LTO,
 
 ```
 example/build/windows/x64/runner/Release/
-├── flutter_webtransport_example.exe
+├── webtransport_example.exe
 ├── flutter_windows.dll
 └── webtransport.dll          <-- the code asset built by hook/build.dart
 ```
@@ -122,8 +122,8 @@ example/build/windows/x64/runner/Release/
 ## Regenerating the bindings
 
 The Rust sources are the single source of truth; the C header is *generated*
-from them. Never edit `src/flutter_webtransport.h` or
-`lib/flutter_webtransport_bindings_generated.dart` by hand.
+from them. Never edit `src/webtransport.h` or
+`lib/webtransport_bindings_generated.dart` by hand.
 
 ```bash
 dart run tool/generate_bindings.dart
@@ -132,7 +132,7 @@ dart run tool/generate_bindings.dart
 ## Server side (native only)
 
 ```dart
-import 'package:flutter_webtransport/flutter_webtransport_ffi.dart';
+import 'package:webtransport/webtransport_ffi.dart';
 
 final config = WebTransportServerConfig()
   ..identity = const WebTransportSelfSignedIdentity(['localhost', '127.0.0.1'])
@@ -167,7 +167,7 @@ self-signed server, exactly as a browser does.
   ```yaml
   hooks:
     user_defines:
-      flutter_webtransport:
+      webtransport:
         cargo_home: D:\Devel\Rust\Cargo
         rustup_home: D:\Devel\Rust\Rustup
   ```

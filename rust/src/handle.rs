@@ -108,7 +108,7 @@ pub(crate) unsafe fn handle_free<T>(ptr: *mut Handle<T>, kind: HandleKind) {
         let handle = unsafe { &*ptr };
         if handle.header.magic != HANDLE_MAGIC || handle.header.kind != kind as u16 {
             crate::runtime::emit_log(
-                "flutter_webtransport: refusing to free an invalid handle".to_owned(),
+                "webtransport: refusing to free an invalid handle".to_owned(),
             );
             return;
         }

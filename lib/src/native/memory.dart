@@ -16,7 +16,7 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 
-import '../../flutter_webtransport_bindings_generated.dart' as b;
+import '../../webtransport_bindings_generated.dart' as b;
 
 /// Raised when the native layer reports a non-success status.
 final class WebTransportException implements Exception {

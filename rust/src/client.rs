@@ -93,7 +93,7 @@ pub unsafe extern "C" fn wt_client_new(
         let wtransport_config = match build_client_config(&state) {
             Ok(config) => config,
             Err((status, message)) => {
-                crate::runtime::emit_log(format!("flutter_webtransport: {message}"));
+                crate::runtime::emit_log(format!("webtransport: {message}"));
                 write_status(status);
                 return core::ptr::null_mut();
             }
@@ -106,7 +106,7 @@ pub unsafe extern "C" fn wt_client_new(
             }
             Some(Err(error)) => {
                 crate::runtime::emit_log(format!(
-                    "flutter_webtransport: cannot bind the client socket: {error}"
+                    "webtransport: cannot bind the client socket: {error}"
                 ));
                 write_status(wt_status_t::WT_ERR_IO);
                 return core::ptr::null_mut();

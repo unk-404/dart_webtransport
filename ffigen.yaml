@@ -1,6 +1,6 @@
 # Dart bindings for the `webtransport` code asset.
 #
-# `src/flutter_webtransport.h` is generated from the Rust sources by cbindgen
+# `src/webtransport.h` is generated from the Rust sources by cbindgen
 # (see `rust/cbindgen.toml`). Regenerate both with:
 #
 #     dart run tool/generate_bindings.dart
@@ -8,21 +8,21 @@
 # then regenerate the Dart bindings from the header with:
 #
 #     dart run ffigen --config ffigen.yaml
-name: FlutterWebtransportBindings
+name: WebtransportBindings
 description: |
-  Bindings for `src/flutter_webtransport.h`.
+  Bindings for `src/webtransport.h`.
 
   Do not edit the generated file by hand: it is produced from the cbindgen
   output of the Rust crate in `rust/`.
-output: 'lib/flutter_webtransport_bindings_generated.dart'
+output: 'lib/webtransport_bindings_generated.dart'
 headers:
   entry-points:
-    - 'src/flutter_webtransport.h'
+    - 'src/webtransport.h'
   include-directives:
-    - 'src/flutter_webtransport.h'
+    - 'src/webtransport.h'
 # Emit `@Native` bindings so the symbols are resolved through the code asset
 # declared by `hook/build.dart`. Without `asset-id`, Dart derives it from this
-# file's URI, i.e. `package:flutter_webtransport/flutter_webtransport_bindings_generated.dart`,
+# file's URI, i.e. `package:webtransport/webtransport_bindings_generated.dart`,
 # which is exactly the asset name the build hook publishes.
 ffi-native:
 # `wt_status_t` and `wt_op_t` are `#[repr(C)]` enums in Rust, so every supported

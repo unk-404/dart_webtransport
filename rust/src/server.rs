@@ -136,7 +136,7 @@ pub unsafe extern "C" fn wt_server_new(
         let wtransport_config = match unsafe { read_server_config(config) } {
             Ok(config) => config,
             Err((status, message)) => {
-                crate::runtime::emit_log(format!("flutter_webtransport: {message}"));
+                crate::runtime::emit_log(format!("webtransport: {message}"));
                 write_status(status);
                 return core::ptr::null_mut();
             }
@@ -149,7 +149,7 @@ pub unsafe extern "C" fn wt_server_new(
             }
             Some(Err(error)) => {
                 crate::runtime::emit_log(format!(
-                    "flutter_webtransport: cannot bind the server socket: {error}"
+                    "webtransport: cannot bind the server socket: {error}"
                 ));
                 write_status(wt_status_t::WT_ERR_IO);
                 return core::ptr::null_mut();
@@ -247,7 +247,7 @@ pub unsafe extern "C" fn wt_server_reload_config(
         let wtransport_config = match unsafe { read_server_config(config) } {
             Ok(config) => config,
             Err((status, message)) => {
-                crate::runtime::emit_log(format!("flutter_webtransport: {message}"));
+                crate::runtime::emit_log(format!("webtransport: {message}"));
                 return status;
             }
         };

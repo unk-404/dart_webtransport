@@ -1,4 +1,4 @@
-import 'package:flutter_webtransport/flutter_webtransport.dart';
+import 'package:webtransport/webtransport.dart';
 
 /// A WebTransport echo server running in this process.
 ///

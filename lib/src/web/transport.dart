@@ -43,8 +43,10 @@ extension type _JsWebTransport._(JSObject _) implements JSObject {
 }
 
 /// Creates a browser backed WebTransport session.
-WebTransport createWebWebTransport(String url, [WebTransportOptions? options]) =>
-    _BrowserWebTransport(url, options ?? const WebTransportOptions());
+WebTransport createWebWebTransport(
+  String url, [
+  WebTransportOptions? options,
+]) => _BrowserWebTransport(url, options ?? const WebTransportOptions());
 
 final class _BrowserWebTransport implements WebTransport {
   _BrowserWebTransport(String url, WebTransportOptions options) {
@@ -114,9 +116,7 @@ final class _BrowserWebTransport implements WebTransport {
   Stream<WebTransportReceiveStream> get incomingUnidirectionalStreams =>
       _readStream(_transport.incomingUnidirectionalStreams)
           .where((value) => value != null)
-          .map(
-            (value) => _BrowserReceiveStream(value! as web.ReadableStream),
-          );
+          .map((value) => _BrowserReceiveStream(value! as web.ReadableStream));
 
   @override
   Future<WebTransportBidirectionalStream> createBidirectionalStream([
@@ -143,9 +143,10 @@ final class _BrowserWebTransport implements WebTransport {
     final info = closeInfo ?? const WebTransportCloseInfo();
     _transport.close(
       <String, Object?>{
-        'closeCode': info.closeCode,
-        'reason': info.reason,
-      }.jsify()! as JSObject,
+            'closeCode': info.closeCode,
+            'reason': info.reason,
+          }.jsify()!
+          as JSObject,
     );
   }
 
@@ -251,8 +252,7 @@ final class _BrowserDatagrams implements WebTransportDatagramDuplexStream {
 
   @override
   Future<void> write(List<int> data) async {
-    final writer =
-        _writer ??= _transport.datagrams.writable.getWriter();
+    final writer = _writer ??= _transport.datagrams.writable.getWriter();
     final view = data is Uint8List ? data : Uint8List.fromList(data);
     await writer.write(view.toJS).toDart;
   }

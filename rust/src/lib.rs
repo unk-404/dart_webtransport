@@ -1,7 +1,7 @@
 //! `wtransport` exposed as a C ABI for Dart FFI.
 //!
 //! The crate root re-exports every type and function of the ABI so that
-//! `cbindgen` can emit a single flat header (`src/flutter_webtransport.h`)
+//! `cbindgen` can emit a single flat header (`src/webtransport.h`)
 //! which `package:ffigen` then turns into the Dart bindings.
 //!
 //! See the module documentation of [`runtime`] for the delivery model, and the
@@ -62,7 +62,7 @@ pub extern "C" fn wt_version_string() -> *const c_char {
     VERSION
         .get_or_init(|| {
             ffi::cstring(concat!(
-                "flutter_webtransport ",
+                "webtransport ",
                 env!("CARGO_PKG_VERSION"),
                 " (wtransport 0.7.2)"
             ))

@@ -16,7 +16,7 @@ import 'package:native_toolchain_rust/native_toolchain_rust.dart';
 ///
 /// `assetName` is the path (relative to this package) of the Dart file that
 /// declares the `@Native` bindings. Together they form the code asset id
-/// `package:flutter_webtransport/flutter_webtransport_bindings_generated.dart`,
+/// `package:webtransport/webtransport_bindings_generated.dart`,
 /// which is exactly what the ffigen output in `lib/` refers to.
 ///
 /// ## Why this hook re-executes itself
@@ -49,7 +49,7 @@ void main(List<String> args) async {
   await build(args, (input, output) async {
     // `Logger.detached` avoids the logging hierarchy, which would otherwise
     // require `hierarchicalLoggingEnabled` just to raise the verbosity.
-    final logger = Logger.detached('flutter_webtransport/build')
+    final logger = Logger.detached('webtransport/build')
       ..level = Level.ALL
       ..onRecord.listen((record) {
         final sink = record.level >= Level.WARNING ? stderr : stdout;
@@ -69,7 +69,7 @@ void main(List<String> args) async {
     );
 
     await RustBuilder(
-      assetName: 'flutter_webtransport_bindings_generated.dart',
+      assetName: 'webtransport_bindings_generated.dart',
       cratePath: 'rust',
       // Release by default: the whole point of this package is throughput.
       buildMode: BuildMode.release,
@@ -91,10 +91,10 @@ void main(List<String> args) async {
 // ---------------------------------------------------------------------------
 
 /// Marker set on the re-executed child so that it never re-executes again.
-const String _reExecMarker = 'FLUTTER_WEBTRANSPORT_HOOK_REEXEC';
+const String _reExecMarker = 'WEBTRANSPORT_HOOK_REEXEC';
 
 /// The package name used to read `hooks: user_defines:` overrides.
-const String _packageName = 'flutter_webtransport';
+const String _packageName = 'webtransport';
 
 /// Resolves the `CARGO_HOME`/`RUSTUP_HOME` values that the hook environment is
 /// missing.
@@ -105,7 +105,7 @@ const String _packageName = 'flutter_webtransport';
 ///      ```yaml
 ///      hooks:
 ///        user_defines:
-///          flutter_webtransport:
+///          webtransport:
 ///            cargo_home: D:\Devel\Rust\Cargo
 ///            rustup_home: D:\Devel\Rust\Rustup
 ///      ```
@@ -162,7 +162,7 @@ Future<int> _reExecWithEnvironment(
   }
 }
 
-/// Reads `hooks: user_defines: flutter_webtransport:` out of the hook input.
+/// Reads `hooks: user_defines: webtransport:` out of the hook input.
 Map<String, Object?> _userDefinesFromArgs(List<String> args) {
   for (final arg in args) {
     if (!arg.startsWith('-config=')) continue;
@@ -236,8 +236,9 @@ String _expandEnvironmentVariables(String value) {
 Map<String, String> _privateTempEnvironment(BuildInput input, Logger logger) {
   try {
     final base = input.outputDirectory.toFilePath();
-    final separator =
-        base.endsWith('/') || base.endsWith('\\') ? '' : Platform.pathSeparator;
+    final separator = base.endsWith('/') || base.endsWith('\\')
+        ? ''
+        : Platform.pathSeparator;
     final directory = Directory('$base${separator}tmp')
       ..createSync(recursive: true);
     logger.fine('Using ${directory.path} as TMP/TEMP for the Rust build');

@@ -1,0 +1,264 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A new push supersedes the previous run of the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Static checks. Cheap, and it catches most of what the build jobs would.
+  # ---------------------------------------------------------------------------
+  analyze:
+    name: Analyze and format
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Formatting
+        run: >-
+          dart format --output=none --set-exit-if-changed
+          lib test tool hook example/lib
+
+      - name: Analyze
+        run: dart analyze
+
+      # `dart analyze` does walk hook/ and example/ in this SDK, but both are
+      # separate entry points with their own package resolutions, so be explicit.
+      - name: Analyze the build hook and the example
+        run: |
+          dart analyze hook
+          dart analyze example
+
+  # ---------------------------------------------------------------------------
+  # The real product: build the code asset with the hook and run the suite.
+  # ---------------------------------------------------------------------------
+  test:
+    name: Test (${{ matrix.os }})
+    # fail-fast would hide which platform broke.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Show the toolchains
+        run: |
+          dart --version
+          rustc --version
+          cargo --version
+
+      # Only the registry and the pinned toolchain are cached: a cached cargo
+      # *target* directory is a classic source of confusing link failures, and
+      # this project needs a correct build far more than a fast one.
+      - name: Cache the Rust registry and toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.rustup/toolchains
+          key: ${{ runner.os }}-rust-${{ hashFiles('rust/rust-toolchain.toml', 'Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-rust-
+
+      # The hook reads rust/rust-toolchain.toml; doing it here fails fast and
+      # keeps the (large) download out of the test log.
+      - name: Install the pinned Rust toolchain
+        run: rustup show active-toolchain
+        working-directory: rust
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      # Builds `webtransport.{dll,so,dylib}` through hook/build.dart, then loads
+      # it as a code asset and drives a real client/server round trip.
+      - name: Test
+        run: dart test
+
+  # ---------------------------------------------------------------------------
+  # The web backend must compile without any of the native code.
+  # ---------------------------------------------------------------------------
+  web:
+    name: Build the web example
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+        working-directory: example
+
+      # If the conditional imports ever let a `dart:ffi` import reach the web
+      # build, this fails to compile -- which is exactly the assertion.
+      - name: Build for web
+        run: flutter build web --release
+        working-directory: example
+
+      - name: Assert the bundle exists
+        run: |
+          test -f example/build/web/main.dart.js
+          ls -l example/build/web/main.dart.js
+
+  # ---------------------------------------------------------------------------
+  # The acceptance criterion: the built product contains the dynamic library.
+  # ---------------------------------------------------------------------------
+  windows-product:
+    name: Windows product contains the library
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # A rename or a pubspec change leaves CMake caches (and the generated
+      # plugin registrant) pointing at the old package name, which fails with
+      # "CMake Generate step failed / build files cannot be regenerated".
+      - name: Drop generated directories
+        shell: bash
+        run: rm -rf example/build example/.dart_tool example/windows/flutter/ephemeral
+
+      - name: Resolve dependencies
+        run: flutter pub get
+        working-directory: example
+
+      - name: Build for Windows
+        run: flutter build windows --release
+        working-directory: example
+
+      - name: Assert the product contains the dynamic library
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=example/build/windows/x64/runner/Release
+          test -f "$out/webtransport.dll"
+          size=$(stat -c %s "$out/webtransport.dll")
+          echo "webtransport.dll: $size bytes"
+          # A stub or a failed LTO link would be far smaller than this.
+          test "$size" -gt 1000000
+          test -f "$out/webtransport_example.exe"
+          ls -l "$out" | head -20
+
+  # ---------------------------------------------------------------------------
+  # Publish conditions. The two gates that matter are here, not in the tests.
+  # ---------------------------------------------------------------------------
+  publish-check:
+    name: Publish dry-run and archive completeness
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: LICENSE and CHANGELOG sanity
+        run: |
+          set -euo pipefail
+          if grep -q "TODO" LICENSE; then
+            echo "::error file=LICENSE::LICENSE is still a placeholder"
+            exit 1
+          fi
+          version=$(sed -n 's/^version: *//p' pubspec.yaml | head -1 | tr -d '\r')
+          echo "pubspec version: $version"
+          grep -q "^## $version" CHANGELOG.md || {
+            echo "::error file=CHANGELOG.md::no '## $version' section"
+            exit 1
+          }
+          # `tr -d '\r'` above is not paranoia: this repository has had CRLF in
+          # pubspec.yaml, and the carriage return silently breaks every anchored
+          # comparison.
+
+      - name: dart pub publish --dry-run
+        run: |
+          # A warning makes pub exit 65, so the exit code alone is useless:
+          # read the output and stop only on a real error.
+          set +e
+          dart pub publish --dry-run > dryrun.txt 2>&1
+          code=$?
+          set -e
+          cat dryrun.txt
+          if grep -Eqi "Package validation found the following error" dryrun.txt; then
+            echo "::error::pub publish reported a blocking error"
+            exit 1
+          fi
+          echo "dry-run exit code: $code (65 means warnings only)"
+
+      - name: Assert the archive is complete
+        # A missing file does not fail `pub publish`: the release goes out and
+        # only a consumer's compiler notices. This unmasks it.
+        run: python3 tool/check_publish_archive.py dryrun.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: publish-dry-run
+          path: dryrun.txt
+
+  # ---------------------------------------------------------------------------
+  # Flutter independence and the lowest dependency versions (pub.dev's
+  # downgrade analysis, which is what [pub-downgrade-failed] scores).
+  # ---------------------------------------------------------------------------
+  dependency-floor:
+    name: Pure Dart resolve and lowest dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      # No Flutter here: `example/` needs it, the package must not.
+      - name: The package must resolve without the Flutter SDK
+        run: dart pub get --no-example
+
+      - name: Analyze the package only
+        run: dart analyze lib test tool hook
+
+      - name: Lowest allowed dependency versions
+        run: |
+          set -euo pipefail
+          dart pub downgrade --no-example
+          dart analyze lib test tool hook
+
+      - name: Every build hook must still compile
+        # A build hook is *compiled*, never analyzed, so a breakage in one shows
+        # up only as [pub-downgrade-failed] on the score page with the reason
+        # hidden. This reproduces pana's check.
+        run: python3 tool/check_hooks_compile.py

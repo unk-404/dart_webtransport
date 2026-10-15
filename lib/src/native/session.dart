@@ -13,14 +13,17 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 
-import '../../flutter_webtransport_bindings_generated.dart' as b;
+import '../../webtransport_bindings_generated.dart' as b;
 import '../api.dart';
 import 'memory.dart';
 import 'runtime.dart';
 
 /// An established session on top of a `wt_connection_t`.
 final class NativeSession implements WebTransport {
-  NativeSession(this._connection, {this.congestionControl = WebTransportCongestionControl.defaultPolicy});
+  NativeSession(
+    this._connection, {
+    this.congestionControl = WebTransportCongestionControl.defaultPolicy,
+  });
 
   final Pointer<b.wt_connection_t> _connection;
 
@@ -88,7 +91,8 @@ final class NativeSession implements WebTransport {
   }
 
   /// Smoothed round-trip time.
-  Duration get rtt => Duration(microseconds: b.wt_connection_rtt_us(_connection));
+  Duration get rtt =>
+      Duration(microseconds: b.wt_connection_rtt_us(_connection));
 
   @override
   Stream<WebTransportBidirectionalStream> get incomingBidirectionalStreams {
@@ -245,7 +249,10 @@ final class NativeSession implements WebTransport {
         if (!event.isOk) {
           _biPumping = false;
           if (!_incomingBi.isClosed) {
-            _failIncoming(_incomingBi, event.exception('incomingBidirectionalStreams'));
+            _failIncoming(
+              _incomingBi,
+              event.exception('incomingBidirectionalStreams'),
+            );
           }
           return;
         }
@@ -287,7 +294,10 @@ final class NativeSession implements WebTransport {
         if (!event.isOk) {
           _uniPumping = false;
           if (!_incomingUni.isClosed) {
-            _failIncoming(_incomingUni, event.exception('incomingUnidirectionalStreams'));
+            _failIncoming(
+              _incomingUni,
+              event.exception('incomingUnidirectionalStreams'),
+            );
           }
           return;
         }
@@ -538,12 +548,7 @@ final class NativeReceiveStream implements WebTransportReceiveStream {
       }
       _pump();
     });
-    final status = b.wt_recv_stream_read(
-      _handle,
-      buffer.data,
-      chunkSize,
-      opId,
-    );
+    final status = b.wt_recv_stream_read(_handle, buffer.data, chunkSize, opId);
     if (status != b.wt_status_t.WT_OK) {
       nativeRuntime.cancel(opId);
       _inFlight = false;

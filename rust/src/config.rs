@@ -884,6 +884,6 @@ fn mutate_identity(
 
 /// Reports a configuration error through the log channel and returns its status.
 fn report_config_error(error: ConfigError) -> wt_status_t {
-    crate::runtime::emit_log(format!("flutter_webtransport: {}", error.1));
+    crate::runtime::emit_log(format!("webtransport: {}", error.1));
     error.0
 }

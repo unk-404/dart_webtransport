@@ -1,6 +1,6 @@
-# flutter_webtransport_example
+# webtransport_example
 
-Demonstrates how to use the flutter_webtransport package.
+Demonstrates how to use the webtransport package.
 
 ## Getting Started
 
