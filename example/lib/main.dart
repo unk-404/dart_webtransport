@@ -1,121 +1,124 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:convert';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_webtransport/flutter_webtransport.dart';
+
+import 'echo_server_stub.dart'
+    if (dart.library.io) 'echo_server_native.dart';
+import 'echo_server_types.dart';
+
+/// Demonstrates the portable client API.
+///
+/// On the native platforms a self-signed echo server is started in this process
+/// (with the native-only library) and the client connects to it, pinning its
+/// certificate exactly the way a browser does. On the web there is no local
+/// server — browsers cannot listen — so the app reports that and the code below
+/// is the same either way.
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final List<String> _log = <String>[];
+  LocalEchoServer? _server;
+  WebTransport? _client;
+  String _status = 'starting…';
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_run());
   }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
+  void dispose() {
+    unawaited(_client?.close());
+    _server?.dispose();
+    super.dispose();
+  }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
+  void _note(String message) {
+    if (!mounted) return;
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _log.add(message);
+      if (_log.length > 14) _log.removeAt(0);
     });
   }
 
+  Future<void> _run() async {
+    try {
+      final server = await startLocalEchoServer();
+      if (server == null) {
+        _note('no local echo server on this platform (the browser cannot '
+            'listen for WebTransport sessions)');
+        if (mounted) setState(() => _status = 'idle');
+        return;
+      }
+      _server = server;
+      _note('server listening on ${server.url}');
+
+      // The portable entry point: on the web this returns the browser
+      // implementation, on the VM the native one.
+      final client = createWebTransport(
+        server.url,
+        WebTransportOptions(serverCertificateHashes: server.certificateHashes),
+      );
+      _client = client;
+      await client.ready.timeout(const Duration(seconds: 20));
+      _note('connected — reliability: ${client.reliability.name}, '
+          'max datagram: ${client.datagrams.maxDatagramSize} B');
+
+      // Unreliable, unordered datagrams.
+      final datagram = client.datagrams.readable.first;
+      await client.datagrams.write(utf8.encode('ping via datagram'));
+      _note('datagram echo: ${utf8.decode(await datagram)}');
+
+      // A reliable, ordered bidirectional stream.
+      final stream = await client.createBidirectionalStream();
+      await stream.writable.write(utf8.encode('hello over a stream'));
+      await stream.writable.close();
+      final echo = await stream.readable.toBytes();
+      _note('stream echo: ${utf8.decode(echo)}');
+
+      await client.close(const WebTransportCloseInfo(closeCode: 0));
+      _note('closed');
+
+      if (mounted) setState(() => _status = 'ok');
+    } on Object catch (error) {
+      _note('failed: $error');
+      if (mounted) setState(() => _status = 'failed');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(title: const Text('flutter_webtransport')),
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text('status: $_status', style: const TextStyle(fontSize: 20)),
+              const Divider(),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _log.length,
+                  itemBuilder: (context, index) => Text(_log[index]),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }

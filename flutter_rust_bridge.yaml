@@ -1,6 +1,0 @@
-rust_input: crate::webtransport
-rust_root: rust/
-dart_output: lib/src
-full_dep: true
-llvm_path:
-  - 'E:\Develop\Microsoft\VisualStudio\Products\18\Community\VC\Tools\Llvm\x64'

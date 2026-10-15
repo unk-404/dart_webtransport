@@ -1,11 +1,11 @@
 {
-    "name": "webtransport_example",
-    "short_name": "webtransport_example",
+    "name": "flutter_webtransport_example",
+    "short_name": "flutter_webtransport_example",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Example WebTransport",
+    "description": "Demonstrates how to use the flutter_webtransport package.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

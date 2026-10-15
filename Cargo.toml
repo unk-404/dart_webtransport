@@ -1,3 +1,13 @@
 [workspace]
-members = ["example/server","rust"]
+members = ["rust/"]
 resolver = "3"
+
+# Profiles are ignored when declared in a workspace member, so the release
+# tuning for the `webtransport` code asset lives here.
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "unwind"
+strip = "debuginfo"
+debug = false

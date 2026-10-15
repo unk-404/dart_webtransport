@@ -1,47 +1,35 @@
 [package]
 name = "webtransport"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
+rust-version = "1.88"
+description = "C ABI for wtransport (WebTransport over HTTP/3), consumed by package:flutter_webtransport"
+license = "MIT OR Apache-2.0"
+publish = false
 
 [lib]
-crate-type = ["cdylib", "staticlib"]
+name = "webtransport"
+# `native_toolchain_rust` requires both; Flutter resolves the dynamic one.
+crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dependencies]
-bytes = "1.12.1"
-cfg-if = "1.0.4"
-flutter_rust_bridge = "=2.13.0-beta.5"
-thiserror = "2.0.19"
-url = "2.5.8"
-web-transport = "0.10.9"
-
-[target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
-js-sys = "0.3.103"
-wasm-bindgen = "0.2.126"
-wasm-bindgen-futures = "0.4.76"
-web-streams = "0.1.3"
-web-transport-wasm = "0.5.10"
-web-sys = { version = "0.3.103", default-features = false, features = [
-    "ReadableStream",
-    "ReadableStreamDefaultReader",
-    "ReadableStreamReadResult",
-    "WebTransport",
-    "WebTransportOptions",
-    "WebTransportHash",
-    "WebTransportBidirectionalStream",
-    "WebTransportCloseInfo",
-    "WebTransportSendStream",
-    "WebTransportReceiveStream",
-    "WebTransportDatagramDuplexStream",
-    "WebTransportCongestionControl",
-    "WebTransportError",
-    "WebTransportErrorSource",
-    "WebTransportErrorOptions",
-    "WritableStream",
-    "WritableStreamDefaultWriter"
+bytes = "1.4"
+rustls-pki-types = { version = "1.13", features = ["std"] }
+tokio = { version = "1.28", features = [
+    "rt-multi-thread",
+    "net",
+    "time",
+    "sync",
+    "io-util",
+    "fs",
 ] }
+wtransport = { version = "0.7.2", default-features = false, features = ["ring"] }
 
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
-
-[build-dependencies]
-cfg_aliases = "0.2.2"
+[features]
+# `ring` avoids the `aws-lc-sys` C toolchain dependency (cmake + nasm), which
+# keeps the Flutter build hook self-contained on every host platform.
+default = ["self-signed", "dangerous-configuration"]
+# Server side self-signed identities (`wt_server_config_set_self_signed`).
+self-signed = ["wtransport/self-signed"]
+# Adds `wt_client_config_set_no_certificate_validation` (tests and demos only).
+dangerous-configuration = ["wtransport/dangerous-configuration"]
